@@ -1,0 +1,12 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =2
+let g:netrw_dirhist_2='/home/ubuntu/.config/nvim/plugged'
+let g:netrw_dirhist_1='/home/ubuntu'
+let g:netrw_dirhist_0='/home/ubuntu/onndb'
+let g:netrw_dirhist_9='/home/ubuntu/curvo-x'
+let g:netrw_dirhist_8='/home/ubuntu/onndb'
+let g:netrw_dirhist_7='/home/ubuntu/onndb/landing-page'
+let g:netrw_dirhist_6='/home/ubuntu/onndb'
+let g:netrw_dirhist_5='/home/ubuntu/trojan-web'
+let g:netrw_dirhist_4='/home/ubuntu/onndb'
+let g:netrw_dirhist_3='/home/ubuntu/trojan-web/server/src'
