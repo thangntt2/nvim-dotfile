@@ -13,6 +13,7 @@ set smartcase
 set ignorecase
 set noshowmode
 set showtabline=2
+set completeopt=menuone,noselect
 
 " set tab numbers
 set guitablabel=%N:%M%t
@@ -105,75 +106,26 @@ Plug 'mhinz/vim-signify'                            " git diff
 Plug 'justinmk/vim-sneak'
 Plug 'styled-components/vim-styled-components', { 'branch': 'main', 'for': 'typescript.tsx' }
 Plug 'pechorin/any-jump.vim'
-" LSP specific block
-Plug 'neoclide/coc.nvim', { 'branch': 'release' }
-Plug 'arcticicestudio/nord-vim'
-Plug 'pappasam/coc-jedi', { 'do': 'yarn install --frozen-lockfile && yarn build' }
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'gruvbox-community/gruvbox'
 Plug 'kyazdani42/nvim-web-devicons'
 Plug 'akinsho/nvim-bufferline.lua'
 Plug 'kshenoy/vim-signature'
+Plug 'arcticicestudio/nord-vim'
+" LSP specific block
+Plug 'neovim/nvim-lspconfig'
+Plug 'glepnir/lspsaga.nvim'
+Plug 'hrsh7th/nvim-compe'
+Plug 'prettier/vim-prettier', {
+  \ 'do': 'yarn install',
+  \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss', 'json', 'graphql', 'markdown', 'vue', 'yaml', 'html'],
+  \ }
 call plug#end()
 
 colorscheme nord
 
-" " " Better typescript highlighting
-" autocmd BufEnter *.{js,jsx,ts,tsx} :syntax sync fromstart
-" autocmd BufLeave *.{js,jsx,ts,tsx} :syntax sync clear
-
-" CoC settings
-command! -nargs=0 Prettier :CocCommand prettier.formatFile
-au BufNewFile,BufRead *.tsx setlocal filetype=typescript.tsx
-lua require("bufferline").setup{}
-
-let g:coc_global_extensions = [
-  \ 'coc-snippets',
-  \ 'coc-pairs',
-  \ 'coc-tsserver',
-  \ ]
-
-autocmd BufWritePre *.js,*.jsx,*.mjs,*.ts,*.tsx,*.css,*.less,*.scss,*.json,*.graphql,*.md,*.vue,*.yaml,*.html Prettier
-nnoremap <silent> <Leader>p :Prettier<CR>
-" Remap for rename current word
-nnoremap <silent> <leader>rn <Plug>(coc-rename)
-" remap go definition
-nmap <silent> gd <Plug>(coc-definition)
-nmap <silent> gr <Plug>(coc-references)
-" autoimport vars
-inoremap <silent><expr> <cr> 
-      \ pumvisible() ? coc#_select_confirm() : 
-      \ "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
-" Completion with <TAB>
-inoremap <silent><expr> <TAB>
-      \ pumvisible() ? "\<C-n>" :
-      \ <SID>check_back_space() ? "\<TAB>" :
-      \ coc#refresh()
-inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
-function! s:check_back_space() abort
-  let col = col('.') - 1
-  return !col || getline('.')[col - 1]  =~# '\s'
-endfunction
-let g:coc_snippet_next = '<cr>'
-" use `:OR` for organize import of current buffer
-command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organizeImport')
-nnoremap <silent> <leader>or :OR<cr>
-" use <leader>d to show list of diagnostics
-nnoremap <silent> <leader>d :<C-u>CocList diagnostics<cr>
-" call coc code action
-nmap <leader>do <Plug>(coc-codeaction)
-" Use K to show documentation in preview window
-nnoremap <silent> K :call <SID>show_documentation()<CR>
-function! s:show_documentation()
-  if (index(['vim','help'], &filetype) >= 0)
-    execute 'h '.expand('<cword>')
-  else
-    call CocAction('doHover')
-  endif
-endfunction
-" Use auocmd to force lightline update.
-autocmd User CocStatusChange,CocDiagnosticChange call lightline#update()
-" end of Coc settings
+" Prettier
+let g:prettier#autoformat = 1
 
 " vim-sneak settings
 let g:sneak#label = 1
@@ -191,11 +143,10 @@ let g:lightline = {
   \ 'colorscheme': 'nord',
   \ 'active': {
   \   'left': [ [ 'mode', 'paste' ],
-  \             [ 'gitbranch', 'cocstatus', 'readonly', 'filename', 'modified' ] ]
+  \             [ 'gitbranch', 'readonly', 'filename', 'modified' ] ]
   \ },
   \ 'component_function': {
-  \   'gitbranch': 'FugitiveHead',
-  \   'cocstatus': 'coc#status'
+  \   'gitbranch': 'FugitiveHead'
   \ },
   \ 'enable': { 'tabline': 0 },
   \ 'component_expand': {'buffers': 'lightline#bufferline#buffers'},
@@ -225,3 +176,87 @@ nnoremap <leader>n :NvimTreeFindFile<CR>
 let g:nvim_tree_hijack_netrw = 0
 let g:nvim_tree_disable_netrw = 0
 let g:nvim_tree_follow = 1
+
+" bufferline
+lua << EOF
+require("bufferline").setup{}
+EOF
+
+" LSP 
+lua << EOF
+require'lspconfig'.tsserver.setup{}
+local saga = require 'lspsaga'
+saga.init_lsp_saga()
+EOF
+
+" lsp provider to find the cursor word definition and reference
+nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
+" or use command LspSagaFinder
+
+" code action
+nnoremap <silent><leader>ca :Lspsaga code_action<CR>
+vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
+
+" show hover doc
+nnoremap <silent>K :Lspsaga hover_doc<CR>
+
+
+" show signature help
+nnoremap <silent> gs :Lspsaga signature_help<CR>
+
+" rename
+nnoremap <silent>gr :Lspsaga rename<CR>
+" close rename win use <C-c> in insert mode or `q` in noremal mode or `:q`
+
+" preview definition
+nnoremap <silent>gd <Cmd>lua vim.lsp.buf.definition()<CR>
+nnoremap <silent>gD :Lspsaga preview_definition <CR>
+
+" Lsp auto completion
+let g:compe = {}
+let g:compe.enabled = v:true
+let g:compe.source = {
+  \ 'path': v:true,
+  \ 'buffer': v:true,
+  \ 'nvim_lsp': v:true,
+  \ }
+lua << EOF
+local t = function(str)
+  return vim.api.nvim_replace_termcodes(str, true, true, true)
+end
+
+local check_back_space = function()
+    local col = vim.fn.col('.') - 1
+    return col == 0 or vim.fn.getline('.'):sub(col, col):match('%s') ~= nil
+end
+
+-- Use (s-)tab to:
+--- move to prev/next item in completion menuone
+--- jump to prev/next snippet's placeholder
+_G.tab_complete = function()
+  if vim.fn.pumvisible() == 1 then
+    return t "<C-n>"
+  elseif vim.fn['vsnip#available'](1) == 1 then
+    return t "<Plug>(vsnip-expand-or-jump)"
+  elseif check_back_space() then
+    return t "<Tab>"
+  else
+    return vim.fn['compe#complete']()
+  end
+end
+_G.s_tab_complete = function()
+  if vim.fn.pumvisible() == 1 then
+    return t "<C-p>"
+  elseif vim.fn['vsnip#jumpable'](-1) == 1 then
+    return t "<Plug>(vsnip-jump-prev)"
+  else
+    -- If <S-Tab> is not working in your terminal, change it to <C-h>
+    return t "<S-Tab>"
+  end
+end
+
+vim.api.nvim_set_keymap("i", "<Tab>", "v:lua.tab_complete()", {expr = true})
+vim.api.nvim_set_keymap("s", "<Tab>", "v:lua.tab_complete()", {expr = true})
+vim.api.nvim_set_keymap("i", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
+vim.api.nvim_set_keymap("s", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
+EOF
