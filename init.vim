@@ -97,21 +97,22 @@ call plug#begin('~/.config/nvim/plugged')
 Plug 'jparise/vim-graphql'
 Plug 'Shougo/defx.nvim', { 'do': ':UpdateRemotePlugins' }
 Plug 'itchyny/lightline.vim'
-Plug 'tpope/vim-fugitive'
-Plug 'sodapopcan/vim-twiggy', { 'on': 'Twiggy' }    " git branch manager
 Plug 'tpope/vim-commentary'
-Plug 'jiangmiao/auto-pairs'
 Plug 'Yggdroot/LeaderF', { 'do': './install.sh' }   " fuzzy file searcher
-Plug 'mhinz/vim-signify'                            " git diff
 Plug 'justinmk/vim-sneak'
 Plug 'styled-components/vim-styled-components', { 'branch': 'main', 'for': 'typescript.tsx' }
-Plug 'pechorin/any-jump.vim'
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'gruvbox-community/gruvbox'
 Plug 'kyazdani42/nvim-web-devicons'
 Plug 'akinsho/nvim-bufferline.lua'
 Plug 'kshenoy/vim-signature'
 Plug 'arcticicestudio/nord-vim'
+Plug 'nvim-lua/plenary.nvim'
+" Git
+Plug 'lewis6991/gitsigns.nvim'
+Plug 'tpope/vim-fugitive'
+Plug 'sodapopcan/vim-twiggy', { 'on': 'Twiggy' }    " git branch manager
+
 " LSP specific block
 Plug 'neovim/nvim-lspconfig'
 Plug 'glepnir/lspsaga.nvim'
@@ -119,6 +120,7 @@ Plug 'hrsh7th/nvim-compe'
 Plug 'nvim-lua/lsp-status.nvim'
 Plug 'hrsh7th/vim-vsnip'
 Plug 'hrsh7th/vim-vsnip-integ'
+Plug 'p00f/nvim-ts-rainbow'
 Plug 'prettier/vim-prettier', {
   \ 'do': 'yarn install',
   \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss', 'json', 'graphql', 'markdown', 'vue', 'yaml', 'html'],
@@ -158,7 +160,7 @@ let g:lightline = {
   \             [ 'gitbranch', 'lsp', 'readonly', 'filename', 'modified' ] ]
   \ },
   \ 'component_function': {
-  \   'gitbranch': 'FugitiveHead',
+  \   'gitbranch': 'FugitiveStatusline',
   \   'lsp': 'LspStatus',
   \ },
   \ 'enable': { 'tabline': 0 },
@@ -386,11 +388,11 @@ function! s:browse_check(path) abort
   endif
 
   " Disable netrw.
-  augroup FileExplorer
-    autocmd!
-  augroup END
+augroup FileExplorer
+  autocmd!
+augroup END
 
-  execute 'Defx' a:path
+execute 'Defx' a:path
 endfunction
 
 call defx#custom#column('icon', {
@@ -398,3 +400,7 @@ call defx#custom#column('icon', {
       \ 'opened_icon': '▾',
       \ 'root_icon': ' ',
       \ })
+
+lua << EOF
+require('gitsigns').setup()
+EOF
