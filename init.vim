@@ -108,15 +108,18 @@ Plug 'akinsho/nvim-bufferline.lua'
 Plug 'kshenoy/vim-signature'
 Plug 'arcticicestudio/nord-vim'
 Plug 'nvim-lua/plenary.nvim'
+Plug 'rmagatti/auto-session'
 " Git
 Plug 'lewis6991/gitsigns.nvim'
 Plug 'tpope/vim-fugitive'
 Plug 'sodapopcan/vim-twiggy', { 'on': 'Twiggy' }    " git branch manager
+Plug 'jiangmiao/auto-pairs'
 
 " LSP specific block
 Plug 'neovim/nvim-lspconfig'
 Plug 'glepnir/lspsaga.nvim'
 Plug 'hrsh7th/nvim-compe'
+Plug 'ray-x/lsp_signature.nvim'
 Plug 'nvim-lua/lsp-status.nvim'
 Plug 'hrsh7th/vim-vsnip'
 Plug 'hrsh7th/vim-vsnip-integ'
@@ -197,7 +200,10 @@ local lsp_status = require('lsp-status')
 lsp_status.register_progress()
 
 lspconfig.tsserver.setup{
-  on_attach = lsp_status.on_attach,
+  on_attach = function(client, bufnr)
+    lsp_status.on_attach(client, bufnr)
+    require "lsp_signature".on_attach()
+  end,
   capabilities = lsp_status.capabilities
 }
 
@@ -227,6 +233,8 @@ nnoremap <silent> gs :Lspsaga signature_help<CR>
 " rename
 nnoremap <silent>gr <cmd>lua vim.lsp.buf.references()<CR>
 " close rename win use <C-c> in insert mode or `q` in noremal mode or `:q`
+
+nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
 
 " preview definition
 nnoremap <silent>gd <Cmd>lua vim.lsp.buf.definition()<CR>
