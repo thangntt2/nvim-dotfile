@@ -199,10 +199,34 @@ lspconfig = require'lspconfig'
 local lsp_status = require('lsp-status')
 lsp_status.register_progress()
 
+lsp_signature_conf = {
+  bind = true, -- This is mandatory, otherwise border config won't get registered.
+               -- If you want to hook lspsaga or other signature handler, pls set to false
+  doc_lines = 2, -- will show two lines of comment/doc(if there are more than two lines in doc, will be truncated);
+                 -- set to 0 if you DO NOT want any API comments be shown
+                 -- This setting only take effect in insert mode, it does not affect signature help in normal
+                 -- mode, 10 by default
+
+  floating_window = true, -- show hint in a floating window, set to false for virtual text only mode
+  fix_pos = false,  -- set to true, the floating window will not auto-close until finish all parameters
+  hint_enable = true, -- virtual hint enable
+  hint_prefix = "🐼 ",  -- Panda for parameter
+  hint_scheme = "String",
+  use_lspsaga = false,  -- set to true if you want to use lspsaga popup
+  hi_parameter = "Search", -- how your parameter will be highlight
+  max_height = 12, -- max height of signature floating_window, if content is more than max_height, you can scroll down
+                   -- to view the hiding contents
+  max_width = 120, -- max_width of signature floating_window, line will be wrapped if exceed max_width
+  handler_opts = {
+    border = "shadow"   -- double, single, shadow, none
+  },
+  extra_trigger_chars = {}
+}
+
 lspconfig.tsserver.setup{
   on_attach = function(client, bufnr)
     lsp_status.on_attach(client, bufnr)
-    require "lsp_signature".on_attach()
+    require "lsp_signature".on_attach(lsp_signature_conf)
   end,
   capabilities = lsp_status.capabilities
 }
@@ -213,7 +237,7 @@ EOF
 
 " Organize import
 
-nnoremap <silent><leader>og <cmd>lua vim.lsp.buf.execute_command({command = "_typescript.organizeImports", arguments = {vim.fn.expand("%:p")}})<CR>
+nnoremap <silent><leader>or <cmd>lua vim.lsp.buf.execute_command({command = "_typescript.organizeImports", arguments = {vim.fn.expand("%:p")}})<CR>
 
 " lsp provider to find the cursor word definition and reference
 nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
@@ -230,11 +254,7 @@ nnoremap <silent>K :Lspsaga hover_doc<CR>
 " show signature help
 nnoremap <silent> gs :Lspsaga signature_help<CR>
 
-" rename
-nnoremap <silent>gr <cmd>lua vim.lsp.buf.references()<CR>
-" close rename win use <C-c> in insert mode or `q` in noremal mode or `:q`
-
-nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
+nnoremap <silent> gr <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
 
 " preview definition
 nnoremap <silent>gd <Cmd>lua vim.lsp.buf.definition()<CR>
@@ -261,21 +281,18 @@ require'compe'.setup {
   max_abbr_width = 100;
   max_kind_width = 100;
   max_menu_width = 100;
-  documentation = {
-    border = { '', '' ,'', ' ', '', '', '', ' ' }, -- the border option is the same as `|help nvim_open_win|`
-    winhighlight = "NormalFloat:CompeDocumentation,FloatBorder:CompeDocumentationBorder",
-    max_width = 120,
-    min_width = 60,
-    max_height = math.floor(vim.o.lines * 0.3),
-    min_height = 1,
-  };
+  documentation = true;
 
   source = {
     path = true;
     buffer = true;
+    calc = true;
     nvim_lsp = true;
     nvim_lua = true;
     vsnip = true;
+    ultisnips = true;
+    luasnip = true;
+    emoji = true;
   };
 }
 local t = function(str)
@@ -317,6 +334,8 @@ vim.api.nvim_set_keymap("s", "<Tab>", "v:lua.tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("i", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("s", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
 EOF
+
+highlight link CompeDocumentation NormalFloat
 
 autocmd FileType defx call s:defx_my_settings()
 function! s:defx_my_settings() abort
