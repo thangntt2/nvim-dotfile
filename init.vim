@@ -73,11 +73,13 @@ nnoremap <c-l> zl
 nnoremap <c-h> zh
 
 "netrw config
-let g:netrw_banner = 0
-let g:netrw_liststyle = 3
-let g:netrw_browse_split = 4
-let g:netrw_altv = 1
-let g:netrw_winsize = 25
+" let g:netrw_banner = 0
+" let g:netrw_liststyle = 3
+" let g:netrw_altv = 1
+" let g:netrw_winsize = 25
+autocmd FileType netrw setl bufhidden=wipe
+let g:netrw_fastbrowse = 0
+let g:netrw_browse_split = 0
 
 " Remap leader to space
 let mapleader=" "
@@ -95,10 +97,9 @@ endif
 call plug#begin('~/.config/nvim/plugged')
 
 Plug 'jparise/vim-graphql'
-Plug 'Shougo/defx.nvim', { 'do': ':UpdateRemotePlugins' }
+Plug 'tpope/vim-vinegar'
 Plug 'itchyny/lightline.vim'
 Plug 'tpope/vim-commentary'
-Plug 'Yggdroot/LeaderF', { 'do': './install.sh' }   " fuzzy file searcher
 Plug 'justinmk/vim-sneak'
 Plug 'styled-components/vim-styled-components', { 'branch': 'main', 'for': 'typescript.tsx' }
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
@@ -109,11 +110,13 @@ Plug 'kshenoy/vim-signature'
 Plug 'arcticicestudio/nord-vim'
 Plug 'nvim-lua/plenary.nvim'
 Plug 'rmagatti/auto-session'
+Plug 'voldikss/vim-floaterm'
 " Git
 Plug 'lewis6991/gitsigns.nvim'
 Plug 'tpope/vim-fugitive'
 Plug 'sodapopcan/vim-twiggy', { 'on': 'Twiggy' }    " git branch manager
 Plug 'jiangmiao/auto-pairs'
+Plug 'Yggdroot/LeaderF', { 'do': ':LeaderfInstallCExtension' }
 
 " LSP specific block
 Plug 'neovim/nvim-lspconfig'
@@ -123,10 +126,8 @@ Plug 'ray-x/lsp_signature.nvim'
 Plug 'nvim-lua/lsp-status.nvim'
 Plug 'hrsh7th/vim-vsnip'
 Plug 'hrsh7th/vim-vsnip-integ'
-Plug 'p00f/nvim-ts-rainbow'
 Plug 'prettier/vim-prettier', {
-  \ 'do': 'yarn install',
-  \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss', 'json', 'graphql', 'markdown', 'vue', 'yaml', 'html'],
+  \ 'do': 'yarn install'
   \ }
 call plug#end()
 
@@ -135,6 +136,7 @@ colorscheme nord
 " Prettier
 let g:prettier#autoformat = 1
 let g:prettier#autoformat_require_pragma = 0
+let g:prettier#config#arrow_parens = 'avoid'
 
 " vim-sneak settings
 let g:sneak#label = 1
@@ -143,6 +145,7 @@ let g:sneak#s_next = 1
 " LeaderF settings
 let g:Lf_WindowPosition = 'popup'
 let g:Lf_PreviewInPopup = 1
+let g:Lf_ShowDevIcons = 1
 nnoremap <silent> <C-space> :Leaderf buffer<CR>
 nnoremap <C-F> :<C-U><C-R>=printf("Leaderf! rg -e ")<CR>
 nnoremap <silent> <C-P> :LeaderfFile<CR>
@@ -174,18 +177,6 @@ let g:lightline = {
 
 " Twiggy settings
 nnoremap <silent> <leader>g :Twiggy<CR>
-
-let t:is_transparent = 0
-function! Toggle_transparent()
-    if t:is_transparent == 0
-        hi Normal guibg=NONE ctermbg=NONE
-        let t:is_transparent = 1
-    else
-        set background=dark
-        let t:is_tranparent = 0
-    endif
-endfunction
-nnoremap <silent> <leader>t : call Toggle_transparent()<CR>
 
 " bufferline
 lua << EOF
@@ -334,99 +325,6 @@ vim.api.nvim_set_keymap("s", "<Tab>", "v:lua.tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("i", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
 vim.api.nvim_set_keymap("s", "<S-Tab>", "v:lua.s_tab_complete()", {expr = true})
 EOF
-
-highlight link CompeDocumentation NormalFloat
-
-autocmd FileType defx call s:defx_my_settings()
-function! s:defx_my_settings() abort
-  " Define mappings
-  nnoremap <silent><buffer><expr> <CR>
-  \ defx#do_action('open')
-  nnoremap <silent><buffer><expr> c
-  \ defx#do_action('copy')
-  nnoremap <silent><buffer><expr> m
-  \ defx#do_action('move')
-  nnoremap <silent><buffer><expr> p
-  \ defx#do_action('paste')
-  nnoremap <silent><buffer><expr> l
-  \ defx#do_action('open')
-  nnoremap <silent><buffer><expr> E
-  \ defx#do_action('open', 'vsplit')
-  nnoremap <silent><buffer><expr> P
-  \ defx#do_action('preview')
-  nnoremap <silent><buffer><expr> o
-  \ defx#do_action('open_tree', 'toggle')
-  nnoremap <silent><buffer><expr> K
-  \ defx#do_action('new_directory')
-  nnoremap <silent><buffer><expr> N
-  \ defx#do_action('new_file')
-  nnoremap <silent><buffer><expr> M
-  \ defx#do_action('new_multiple_files')
-  nnoremap <silent><buffer><expr> C
-  \ defx#do_action('toggle_columns',
-  \                'mark:indent:icon:filename:type:size:time')
-  nnoremap <silent><buffer><expr> S
-  \ defx#do_action('toggle_sort', 'time')
-  nnoremap <silent><buffer><expr> d
-  \ defx#do_action('remove')
-  nnoremap <silent><buffer><expr> r
-  \ defx#do_action('rename')
-  nnoremap <silent><buffer><expr> !
-  \ defx#do_action('execute_command')
-  nnoremap <silent><buffer><expr> x
-  \ defx#do_action('execute_system')
-  nnoremap <silent><buffer><expr> yy
-  \ defx#do_action('yank_path')
-  nnoremap <silent><buffer><expr> .
-  \ defx#do_action('toggle_ignored_files')
-  nnoremap <silent><buffer><expr> ;
-  \ defx#do_action('repeat')
-  nnoremap <silent><buffer><expr> -
-  \ defx#do_action('cd', ['..'])
-  nnoremap <silent><buffer><expr> ~
-  \ defx#do_action('cd')
-  nnoremap <silent><buffer><expr> q
-  \ defx#do_action('quit')
-  nnoremap <silent><buffer><expr> <Space>
-  \ defx#do_action('toggle_select') . 'j'
-  nnoremap <silent><buffer><expr> *
-  \ defx#do_action('toggle_select_all')
-  nnoremap <silent><buffer><expr> j
-  \ line('.') == line('$') ? 'gg' : 'j'
-  nnoremap <silent><buffer><expr> k
-  \ line('.') == 1 ? 'G' : 'k'
-  nnoremap <silent><buffer><expr> <C-r>
-  \ defx#do_action('redraw')
-  nnoremap <silent><buffer><expr> <C-g>
-  \ defx#do_action('print')
-  nnoremap <silent><buffer><expr> cd
-  \ defx#do_action('change_vim_cwd')
-endfunction
-
-nnoremap <silent> - :Defx `escape(expand('%:p:h'), ' :')` -search=`expand('%:p')`<CR>
-
-autocmd BufEnter,VimEnter,BufNew,BufWinEnter,BufRead,BufCreate
-      \ * if isdirectory(expand('<amatch>'))
-      \   | call s:browse_check(expand('<amatch>')) | endif
-
-function! s:browse_check(path) abort
-  if bufnr('%') != expand('<abuf>')
-    return
-  endif
-
-  " Disable netrw.
-augroup FileExplorer
-  autocmd!
-augroup END
-
-execute 'Defx' a:path
-endfunction
-
-call defx#custom#column('icon', {
-      \ 'directory_icon': '▸',
-      \ 'opened_icon': '▾',
-      \ 'root_icon': ' ',
-      \ })
 
 lua << EOF
 require('gitsigns').setup()
