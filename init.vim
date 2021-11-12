@@ -1,4 +1,5 @@
 syntax enable
+set guifont=Hack\ Nerd\ Font:h13
 set background=dark
 set hidden
 set switchbuf=usetab,newtab
@@ -14,6 +15,7 @@ set ignorecase
 set noshowmode
 set showtabline=2
 set completeopt=menuone,noselect
+set mouse=a
 
 " set tab numbers
 set guitablabel=%N:%M%t
@@ -40,28 +42,26 @@ set showmatch           " highlight matching [{()}]
 set hlsearch            " highlight matches
 set noautochdir         " root as working directory no matter how deep I am
 
+set rtp+=/usr/bin/fzf
+
 " improve clipboard speed
-let win32yank = resolve(exepath('win32yank.exe'))
+let clip = resolve(exepath('clip.exe'))
 let g:clipboard = {
-  \ 'name': 'win32yank',
+  \ 'name': 'clip',
   \ 'copy': {
-    \ '+': win32yank.' -i --crlf',
-    \ '*': win32yank.' -i --crlf'
+  \ '+': clip,
+  \ '*': clip
   \   },
   \ 'paste': {
-    \ '+': win32yank.' -o --lf',
-    \ '*': win32yank.' -o --lf'
+  \ '+': 'pbpaste.exe --lf',
+  \ '*': 'pbpaste.exe --lf'
   \   }
   \ }
+
 nnoremap <Tab> :bnext<CR>
 nnoremap <S-Tab> :bprevious<CR>
 
 " Consistent movement
-nnoremap J }
-nnoremap K {
-nnoremap L ^
-nnoremap H 0
-
 nnoremap <A-j> <C-W>j
 nnoremap <A-k> <C-W>k
 nnoremap <A-h> <C-W>h
@@ -116,12 +116,17 @@ Plug 'lewis6991/gitsigns.nvim'
 Plug 'tpope/vim-fugitive'
 Plug 'sodapopcan/vim-twiggy', { 'on': 'Twiggy' }    " git branch manager
 Plug 'jiangmiao/auto-pairs'
-Plug 'Yggdroot/LeaderF', { 'do': ':LeaderfInstallCExtension' }
+" Plug 'Yggdroot/LeaderF', { 'do': ':LeaderfInstallCExtension' }
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
+Plug 'ojroques/nvim-lspfuzzy'
 
 " LSP specific block
 Plug 'neovim/nvim-lspconfig'
 Plug 'glepnir/lspsaga.nvim'
 Plug 'hrsh7th/nvim-compe'
+Plug 'jose-elias-alvarez/nvim-lsp-ts-utils'
+Plug 'liuchengxu/vista.vim'
 Plug 'ray-x/lsp_signature.nvim'
 Plug 'nvim-lua/lsp-status.nvim'
 Plug 'hrsh7th/vim-vsnip'
@@ -142,13 +147,13 @@ let g:prettier#config#arrow_parens = 'avoid'
 let g:sneak#label = 1
 let g:sneak#s_next = 1
 
-" LeaderF settings
-let g:Lf_WindowPosition = 'popup'
-let g:Lf_PreviewInPopup = 1
-let g:Lf_ShowDevIcons = 1
-nnoremap <silent> <C-space> :Leaderf buffer<CR>
-nnoremap <C-F> :<C-U><C-R>=printf("Leaderf! rg -e ")<CR>
-nnoremap <silent> <C-P> :LeaderfFile<CR>
+" " LeaderF settings
+" let g:Lf_WindowPosition = 'popup'
+" let g:Lf_PreviewInPopup = 1
+" let g:Lf_ShowDevIcons = 1
+" nnoremap <silent> <C-space> :Leaderf buffer<CR>
+" nnoremap <C-F> :<C-U><C-R>=printf("Leaderf! rg -e ")<CR>
+" nnoremap <silent> <C-P> :LeaderfFile<CR>
 
 function! LspStatus() abort
   if luaeval('#vim.lsp.buf_get_clients() > 0')
@@ -191,7 +196,7 @@ local lsp_status = require('lsp-status')
 lsp_status.register_progress()
 
 lsp_signature_conf = {
-  bind = true, -- This is mandatory, otherwise border config won't get registered.
+  bind = false, -- This is mandatory, otherwise border config won't get registered.
                -- If you want to hook lspsaga or other signature handler, pls set to false
   doc_lines = 2, -- will show two lines of comment/doc(if there are more than two lines in doc, will be truncated);
                  -- set to 0 if you DO NOT want any API comments be shown
@@ -203,7 +208,7 @@ lsp_signature_conf = {
   hint_enable = true, -- virtual hint enable
   hint_prefix = "🐼 ",  -- Panda for parameter
   hint_scheme = "String",
-  use_lspsaga = false,  -- set to true if you want to use lspsaga popup
+  use_lspsaga = true,  -- set to true if you want to use lspsaga popup
   hi_parameter = "Search", -- how your parameter will be highlight
   max_height = 12, -- max height of signature floating_window, if content is more than max_height, you can scroll down
                    -- to view the hiding contents
@@ -214,9 +219,68 @@ lsp_signature_conf = {
   extra_trigger_chars = {}
 }
 
+lspconfig.rust_analyzer.setup{
+    on_attach=on_attach,
+    settings = {
+        ["rust-analyzer"] = {
+            assist = {
+                importGranularity = "module",
+                importPrefix = "by_self",
+            },
+            cargo = {
+                loadOutDirsFromCheck = true
+            },
+            procMacro = {
+                enable = true
+            },
+        }
+    }
+}
+
 lspconfig.tsserver.setup{
   on_attach = function(client, bufnr)
     lsp_status.on_attach(client, bufnr)
+
+    local ts_utils = require("nvim-lsp-ts-utils")
+
+    -- defaults
+    ts_utils.setup {
+        debug = false,
+        disable_commands = false,
+        enable_import_on_completion = true,
+
+        -- import all
+        import_all_timeout = 5000, -- ms
+        import_all_priorities = {
+            buffers = 4, -- loaded buffer names
+            buffer_content = 3, -- loaded buffer content
+            local_files = 5, -- git files or files with relative path markers
+            same_file = 1, -- add to existing import statement
+        },
+        import_all_scan_buffers = 100,
+        import_all_select_source = false,
+
+        -- eslint
+        eslint_enable_code_actions = true,
+        eslint_enable_disable_comments = true,
+        eslint_bin = "eslint",
+        eslint_config_fallback = nil,
+        eslint_enable_diagnostics = false,
+
+        -- formatting
+        enable_formatting = true,
+        formatter = "prettier",
+        formatter_config_fallback = nil,
+
+        -- update imports on file move
+        update_imports_on_move = true,
+        require_confirmation_on_move = false,
+        watch_dir = nil,
+    }
+
+    -- required to fix code action ranges
+    ts_utils.setup_client(client)
+
     require "lsp_signature".on_attach(lsp_signature_conf)
   end,
   capabilities = lsp_status.capabilities
@@ -232,28 +296,37 @@ nnoremap <silent><leader>or <cmd>lua vim.lsp.buf.execute_command({command = "_ty
 
 " lsp provider to find the cursor word definition and reference
 nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
-" or use command LspSagaFinder
 
 " code action
-nnoremap <silent><leader>ca :Lspsaga code_action<CR>
+nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
 vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
 
 " show hover doc
-nnoremap <silent>K :Lspsaga hover_doc<CR>
-
+nnoremap <silent>K <cmd>lua require'lspsaga.hover'.render_hover_doc()<CR>
 
 " show signature help
-nnoremap <silent> gs :Lspsaga signature_help<CR>
+nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<CR>
 
 nnoremap <silent> gr <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
 
 " preview definition
 nnoremap <silent>gd <Cmd>lua vim.lsp.buf.definition()<CR>
-nnoremap <silent>gD :Lspsaga preview_definition <CR>
+nnoremap <silent>gD <cmd>lua require'lspsaga.provider'.preview_definition()<CR>
+
+" rename
+nnoremap <leader>gr <cmd>lua require'lspsaga.provider'.rename()<CR>
+
+" show
+nnoremap <silent><leader>cd <cmd>lua require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
+
+" jump diagnostic
+nnoremap <silent>[e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
+nnoremap <silent>]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
+
 
 " Lsp auto completion
 inoremap <silent><expr> <C-Space> compe#complete()
-inoremap <silent><expr> <CR>      compe#confirm('<CR>')
+" inoremap <silent><expr> <CR>      compe#confirm('<CR>')
 inoremap <silent><expr> <C-e>     compe#close('<C-e>')
 inoremap <silent><expr> <C-f>     compe#scroll({ 'delta': +4 })
 inoremap <silent><expr> <C-d>     compe#scroll({ 'delta': -4 })
@@ -277,7 +350,6 @@ require'compe'.setup {
   source = {
     path = true;
     buffer = true;
-    calc = true;
     nvim_lsp = true;
     nvim_lua = true;
     vsnip = true;
@@ -286,6 +358,7 @@ require'compe'.setup {
     emoji = true;
   };
 }
+vim.api.nvim_set_keymap('i', '<cr>', 'compe#confirm("<cr>")', { expr = true })
 local t = function(str)
   return vim.api.nvim_replace_termcodes(str, true, true, true)
 end
@@ -329,3 +402,15 @@ EOF
 lua << EOF
 require('gitsigns').setup()
 EOF
+
+lua << EOF
+require('lspfuzzy').setup {}
+EOF
+
+" FZF settings
+" command! FZFS call fzf#run(fzf#wrap({'source': 'git ls-files'}))
+" nnoremap <silent> <C-space> :Leaderf buffer<CR>
+" nnoremap <C-F> :<C-U><C-R>=printf("Leaderf! rg -e ")<CR>
+nnoremap <silent> <C-P> :call fzf#run(fzf#wrap({'source': 'git ls-files'}))<CR>
+nnoremap <silent> <C-space> :Buffers <CR>
+nnoremap <silent> <C-F> <cmd>lua vim.lsp.buf.workspace_symbol() <CR>
