@@ -1,5 +1,5 @@
 syntax enable
-set guifont=Hack\ Nerd\ Font:h13
+set guifont=Hack\ Nerd\ Font\ Mono:h13
 set background=dark
 set hidden
 set switchbuf=usetab,newtab
@@ -45,18 +45,18 @@ set noautochdir         " root as working directory no matter how deep I am
 set rtp+=/usr/bin/fzf
 
 " improve clipboard speed
-let clip = resolve(exepath('clip.exe'))
-let g:clipboard = {
-  \ 'name': 'clip',
-  \ 'copy': {
-  \ '+': clip,
-  \ '*': clip
-  \   },
-  \ 'paste': {
-  \ '+': 'pbpaste.exe --lf',
-  \ '*': 'pbpaste.exe --lf'
-  \   }
-  \ }
+" let clip = resolve(exepath('clip.exe'))
+" let g:clipboard = {
+"   \ 'name': 'clip',
+"   \ 'copy': {
+"   \ '+': clip,
+"   \ '*': clip
+"   \   },
+"   \ 'paste': {
+"   \ '+': 'pbpaste.exe --lf',
+"   \ '*': 'pbpaste.exe --lf'
+"   \   }
+"   \ }
 
 nnoremap <Tab> :bnext<CR>
 nnoremap <S-Tab> :bprevious<CR>
@@ -106,11 +106,9 @@ Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'gruvbox-community/gruvbox'
 Plug 'kyazdani42/nvim-web-devicons'
 Plug 'akinsho/nvim-bufferline.lua'
-Plug 'kshenoy/vim-signature'
 Plug 'arcticicestudio/nord-vim'
 Plug 'nvim-lua/plenary.nvim'
 Plug 'rmagatti/auto-session'
-Plug 'voldikss/vim-floaterm'
 " Git
 Plug 'lewis6991/gitsigns.nvim'
 Plug 'tpope/vim-fugitive'
@@ -119,24 +117,29 @@ Plug 'jiangmiao/auto-pairs'
 " Plug 'Yggdroot/LeaderF', { 'do': ':LeaderfInstallCExtension' }
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
-Plug 'ojroques/nvim-lspfuzzy'
+Plug 'NTBBloodbath/rest.nvim'
 
 " LSP specific block
 Plug 'neovim/nvim-lspconfig'
-Plug 'glepnir/lspsaga.nvim'
+" Plug 'glepnir/lspsaga.nvim'
+Plug 'tami5/lspsaga.nvim'
+Plug 'stevearc/aerial.nvim'
+" Plug 'ms-jpq/coq_nvim'
 Plug 'hrsh7th/nvim-compe'
-Plug 'jose-elias-alvarez/nvim-lsp-ts-utils'
-Plug 'liuchengxu/vista.vim'
+" Plug 'jose-elias-alvarez/nvim-lsp-ts-utils'
 Plug 'ray-x/lsp_signature.nvim'
 Plug 'nvim-lua/lsp-status.nvim'
-Plug 'hrsh7th/vim-vsnip'
-Plug 'hrsh7th/vim-vsnip-integ'
 Plug 'prettier/vim-prettier', {
   \ 'do': 'yarn install'
   \ }
+" Debug
+Plug 'mfussenegger/nvim-dap'
+Plug 'rcarriga/nvim-dap-ui'
+Plug 'gfanto/fzf-lsp.nvim'
+
 call plug#end()
 
-colorscheme nord
+colorscheme gruvbox
 
 " Prettier
 let g:prettier#autoformat = 1
@@ -191,6 +194,7 @@ EOF
 " LSP 
 lua << EOF
 lspconfig = require'lspconfig'
+-- coq = require("coq")
 
 local lsp_status = require('lsp-status')
 lsp_status.register_progress()
@@ -219,6 +223,9 @@ lsp_signature_conf = {
   extra_trigger_chars = {}
 }
 
+local aerial = require("aerial")
+aerial.setup({})
+
 lspconfig.rust_analyzer.setup{
     on_attach=on_attach,
     settings = {
@@ -237,49 +244,16 @@ lspconfig.rust_analyzer.setup{
     }
 }
 
+local pid = vim.fn.getpid()
+local omnisharp_bin = "~/Workspace/omnisharp-lsp/OmniSharp"
+lspconfig.omnisharp.setup{
+    cmd = { omnisharp_bin, "--languageserver" , "--hostPID", tostring(pid) };
+}
+
 lspconfig.tsserver.setup{
   on_attach = function(client, bufnr)
     lsp_status.on_attach(client, bufnr)
-
-    local ts_utils = require("nvim-lsp-ts-utils")
-
-    -- defaults
-    ts_utils.setup {
-        debug = false,
-        disable_commands = false,
-        enable_import_on_completion = true,
-
-        -- import all
-        import_all_timeout = 5000, -- ms
-        import_all_priorities = {
-            buffers = 4, -- loaded buffer names
-            buffer_content = 3, -- loaded buffer content
-            local_files = 5, -- git files or files with relative path markers
-            same_file = 1, -- add to existing import statement
-        },
-        import_all_scan_buffers = 100,
-        import_all_select_source = false,
-
-        -- eslint
-        eslint_enable_code_actions = true,
-        eslint_enable_disable_comments = true,
-        eslint_bin = "eslint",
-        eslint_config_fallback = nil,
-        eslint_enable_diagnostics = false,
-
-        -- formatting
-        enable_formatting = true,
-        formatter = "prettier",
-        formatter_config_fallback = nil,
-
-        -- update imports on file move
-        update_imports_on_move = true,
-        require_confirmation_on_move = false,
-        watch_dir = nil,
-    }
-
-    -- required to fix code action ranges
-    ts_utils.setup_client(client)
+    aerial.on_attach(client, bufnr)
 
     require "lsp_signature".on_attach(lsp_signature_conf)
   end,
@@ -307,8 +281,6 @@ nnoremap <silent>K <cmd>lua require'lspsaga.hover'.render_hover_doc()<CR>
 " show signature help
 nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<CR>
 
-nnoremap <silent> gr <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
-
 " preview definition
 nnoremap <silent>gd <Cmd>lua vim.lsp.buf.definition()<CR>
 nnoremap <silent>gD <cmd>lua require'lspsaga.provider'.preview_definition()<CR>
@@ -320,8 +292,9 @@ nnoremap <leader>gr <cmd>lua require'lspsaga.provider'.rename()<CR>
 nnoremap <silent><leader>cd <cmd>lua require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
 
 " jump diagnostic
-nnoremap <silent>[e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
-nnoremap <silent>]e <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
+nnoremap <silent>gj <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
+nnoremap <silent>gk <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
+nnoremap <silent>go <cmd>lua require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
 
 
 " Lsp auto completion
@@ -352,7 +325,6 @@ require'compe'.setup {
     buffer = true;
     nvim_lsp = true;
     nvim_lua = true;
-    vsnip = true;
     ultisnips = true;
     luasnip = true;
     emoji = true;
@@ -374,8 +346,6 @@ end
 _G.tab_complete = function()
   if vim.fn.pumvisible() == 1 then
     return t "<C-n>"
-  elseif vim.fn['vsnip#available'](1) == 1 then
-    return t "<Plug>(vsnip-expand-or-jump)"
   elseif check_back_space() then
     return t "<Tab>"
   else
@@ -385,8 +355,6 @@ end
 _G.s_tab_complete = function()
   if vim.fn.pumvisible() == 1 then
     return t "<C-p>"
-  elseif vim.fn['vsnip#jumpable'](-1) == 1 then
-    return t "<Plug>(vsnip-jump-prev)"
   else
     -- If <S-Tab> is not working in your terminal, change it to <C-h>
     return t "<S-Tab>"
@@ -403,14 +371,50 @@ lua << EOF
 require('gitsigns').setup()
 EOF
 
-lua << EOF
-require('lspfuzzy').setup {}
-EOF
-
 " FZF settings
 " command! FZFS call fzf#run(fzf#wrap({'source': 'git ls-files'}))
 " nnoremap <silent> <C-space> :Leaderf buffer<CR>
 " nnoremap <C-F> :<C-U><C-R>=printf("Leaderf! rg -e ")<CR>
 nnoremap <silent> <C-P> :call fzf#run(fzf#wrap({'source': 'git ls-files'}))<CR>
 nnoremap <silent> <C-space> :Buffers <CR>
-nnoremap <silent> <C-F> <cmd>lua vim.lsp.buf.workspace_symbol() <CR>
+nnoremap <silent> <C-W> <cmd>lua vim.lsp.buf.workspace_symbol() <CR>
+nnoremap <silent> <C-F> :Rg <CR>
+let g:fzf_preview_window = ['down:50%:hidden', 'ctrl-/']
+
+" Aerial settings
+nnoremap <silent> <C-]> <cmd>call aerial#fzf()<cr>
+
+" rest.nvim
+nnoremap <silent> <C-q> <Plug>RestNvim<CR>
+
+" toggleterm
+nnoremap <silent><c-t> <Cmd>exe v:count1 . "ToggleTerm"<CR>
+inoremap <silent><c-t> <Esc><Cmd>exe v:count1 . "ToggleTerm"<CR>
+
+lua << EOF
+local dap = require('dap')
+dap.adapters.node2 = {
+  type = 'executable',
+  command = 'node',
+  args = {'server', 'test-debug', os.getenv('HOME') .. '~/.config/nvim/vscode-node-debug2/src/nodeDebug.ts'},
+}
+dap.configurations.typescript = {
+  {
+    name = 'Launch',
+    type = 'node2',
+    request = 'launch',
+    program = '${file}',
+    cwd = vim.fn.getcwd(),
+    sourceMaps = true,
+    protocol = 'inspector',
+    console = 'integratedTerminal',
+  },
+  {
+    -- For this to work you need to make sure the node process is started with the `--inspect` flag.
+    name = 'Attach to process',
+    type = 'node2',
+    request = 'attach',
+    processId = require'dap.utils'.pick_process,
+  },
+}
+EOF
