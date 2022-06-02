@@ -121,6 +121,7 @@ Plug 'NTBBloodbath/rest.nvim'
 
 " LSP specific block
 Plug 'neovim/nvim-lspconfig'
+Plug 'gfanto/fzf-lsp.nvim'
 " Plug 'glepnir/lspsaga.nvim'
 Plug 'tami5/lspsaga.nvim'
 Plug 'stevearc/aerial.nvim'
@@ -128,20 +129,20 @@ Plug 'stevearc/aerial.nvim'
 Plug 'hrsh7th/cmp-nvim-lsp'
 Plug 'hrsh7th/cmp-buffer'
 Plug 'hrsh7th/cmp-path'
-Plug 'hrsh7th/cmp-cmdline'
 Plug 'hrsh7th/nvim-cmp'
 Plug 'hrsh7th/cmp-vsnip'
 Plug 'hrsh7th/vim-vsnip'
 " Plug 'jose-elias-alvarez/nvim-lsp-ts-utils'
 Plug 'ray-x/lsp_signature.nvim'
 Plug 'nvim-lua/lsp-status.nvim'
+" Plug 'sbdchd/neoformat'
 Plug 'prettier/vim-prettier', {
   \ 'do': 'yarn install'
   \ }
 " Debug
 Plug 'mfussenegger/nvim-dap'
 Plug 'rcarriga/nvim-dap-ui'
-Plug 'gfanto/fzf-lsp.nvim'
+Plug 'Pocco81/dap-buddy.nvim'
 
 call plug#end()
 
@@ -382,7 +383,7 @@ lua << EOF
   }
 
   local pid = vim.fn.getpid()
-  local omnisharp_bin = "~/Workspace/omnisharp-lsp/OmniSharp"
+  local omnisharp_bin = "/Users/thangtrinh/Workspace/omnisharp-lsp/OmniSharp"
   lspconfig.omnisharp.setup{
       cmd = { omnisharp_bin, "--languageserver" , "--hostPID", tostring(pid) },
       capabilities = capabilities
@@ -450,6 +451,33 @@ dap.configurations.typescript = {
     type = 'node2',
     request = 'attach',
     processId = require'dap.utils'.pick_process,
+  },
+}
+EOF
+
+lua << EOF
+require'nvim-treesitter.configs'.setup {
+  -- A list of parser names, or "all"
+  ensure_installed = { "javascript", "typescript", "c_sharp", "go", "lua", "tsx", "graphql", "css", "html", "vim" },
+
+  -- Install parsers synchronously (only applied to `ensure_installed`)
+  sync_install = false,
+
+  highlight = {
+    -- `false` will disable the whole extension
+    enable = true,
+
+    -- NOTE: these are the names of the parsers and not the filetype. (for example if you want to
+    -- disable highlighting for the `tex` filetype, you need to include `latex` in this list as this is
+    -- the name of the parser)
+    -- list of language that will be disabled
+    disable = {},
+
+    -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
+    -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
+    -- Using this option may slow down your editor, and you may see some duplicate highlights.
+    -- Instead of true it can also be a list of languages
+    additional_vim_regex_highlighting = false,
   },
 }
 EOF
