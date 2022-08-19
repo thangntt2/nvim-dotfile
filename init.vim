@@ -95,6 +95,9 @@ if empty(glob("~/.local/share/nvim/site/autoload/plug.vim"))
 endif
 
 call plug#begin('~/.config/nvim/plugged')
+" Theme
+Plug 'gruvbox-community/gruvbox'
+Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
 
 Plug 'jparise/vim-graphql'
 Plug 'tpope/vim-vinegar'
@@ -103,7 +106,6 @@ Plug 'tpope/vim-commentary'
 Plug 'justinmk/vim-sneak'
 Plug 'styled-components/vim-styled-components', { 'branch': 'main', 'for': 'typescript.tsx' }
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
-Plug 'gruvbox-community/gruvbox'
 Plug 'kyazdani42/nvim-web-devicons'
 Plug 'akinsho/nvim-bufferline.lua'
 Plug 'arcticicestudio/nord-vim'
@@ -135,6 +137,8 @@ Plug 'hrsh7th/vim-vsnip'
 " Plug 'jose-elias-alvarez/nvim-lsp-ts-utils'
 Plug 'ray-x/lsp_signature.nvim'
 Plug 'nvim-lua/lsp-status.nvim'
+Plug 'kyazdani42/nvim-web-devicons'
+Plug 'folke/trouble.nvim'
 " Plug 'sbdchd/neoformat'
 Plug 'prettier/vim-prettier', {
   \ 'do': 'yarn install'
@@ -146,7 +150,17 @@ Plug 'Pocco81/dap-buddy.nvim'
 
 call plug#end()
 
-colorscheme gruvbox
+colorscheme tokyonight
+
+
+lua << EOF
+  require("trouble").setup {
+    -- your configuration comes here
+    -- or leave it empty to use the default settings
+    -- refer to the configuration section below
+  }
+EOF
+
 
 " Prettier
 let g:prettier#autoformat = 1
@@ -173,9 +187,11 @@ function! LspStatus() abort
   return ''
 endfunction
 
+command! -bang -nargs=* Rg call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case ".shellescape(<q-args>), 1, {'options': '--delimiter : --nth 4..'}, <bang>0) 
+
 " Lightline settings
 let g:lightline = {
-  \ 'colorscheme': 'nord',
+  \ 'colorscheme': 'tokyonight',
   \ 'active': {
   \   'left': [ [ 'mode', 'paste' ],
   \             [ 'gitbranch', 'lsp', 'readonly', 'filename', 'modified' ] ]
