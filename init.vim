@@ -98,30 +98,29 @@ call plug#begin('~/.config/nvim/plugged')
 " Theme
 Plug 'gruvbox-community/gruvbox'
 Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
+Plug 'itchyny/lightline.vim'
+Plug 'arcticicestudio/nord-vim'
+Plug 'akinsho/nvim-bufferline.lua'
 
 Plug 'jparise/vim-graphql'
 Plug 'tpope/vim-vinegar'
-Plug 'itchyny/lightline.vim'
 Plug 'tpope/vim-commentary'
 Plug 'justinmk/vim-sneak'
 Plug 'styled-components/vim-styled-components', { 'branch': 'main', 'for': 'typescript.tsx' }
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'kyazdani42/nvim-web-devicons'
-Plug 'akinsho/nvim-bufferline.lua'
-Plug 'arcticicestudio/nord-vim'
 Plug 'nvim-lua/plenary.nvim'
 Plug 'rmagatti/auto-session'
 " Git
 Plug 'lewis6991/gitsigns.nvim'
 Plug 'tpope/vim-fugitive'
 Plug 'sodapopcan/vim-twiggy', { 'on': 'Twiggy' }    " git branch manager
-Plug 'jiangmiao/auto-pairs'
-" Plug 'Yggdroot/LeaderF', { 'do': ':LeaderfInstallCExtension' }
+Plug 'windwp/nvim-autopairs'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'junegunn/fzf.vim'
-Plug 'NTBBloodbath/rest.nvim'
 
 " LSP specific block
+" Plug 'williamboman/nvim-lsp-installer'
 Plug 'neovim/nvim-lspconfig'
 Plug 'gfanto/fzf-lsp.nvim'
 " Plug 'glepnir/lspsaga.nvim'
@@ -133,6 +132,7 @@ Plug 'hrsh7th/cmp-buffer'
 Plug 'hrsh7th/cmp-path'
 Plug 'hrsh7th/nvim-cmp'
 Plug 'hrsh7th/cmp-vsnip'
+Plug 'hrsh7th/cmp-cmdline'
 Plug 'hrsh7th/vim-vsnip'
 " Plug 'jose-elias-alvarez/nvim-lsp-ts-utils'
 Plug 'ray-x/lsp_signature.nvim'
@@ -147,11 +147,23 @@ Plug 'prettier/vim-prettier', {
 Plug 'mfussenegger/nvim-dap'
 Plug 'rcarriga/nvim-dap-ui'
 Plug 'Pocco81/dap-buddy.nvim'
+Plug 'williamboman/mason.nvim'
+Plug 'akinsho/toggleterm.nvim', {'tag' : '*'}
 
 call plug#end()
 
-colorscheme tokyonight
+colorscheme gruvbox
 
+lua << EOF
+require("toggleterm").setup()
+EOF
+lua << EOF
+require("nvim-autopairs").setup {}
+EOF
+
+lua << EOF
+require("mason").setup()
+EOF
 
 lua << EOF
   require("trouble").setup {
@@ -345,7 +357,7 @@ lua << EOF
   })
 
   -- Setup lspconfig.
-  local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
+  local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
   lspconfig = require'lspconfig'
   -- coq = require("coq")
 
@@ -398,8 +410,12 @@ lua << EOF
       }
   }
 
+
+  lspconfig.eslint.setup {}
+  lspconfig.pylsp.setup {}
+
   local pid = vim.fn.getpid()
-  local omnisharp_bin = "/Users/thangtrinh/Workspace/omnisharp-lsp/OmniSharp"
+  local omnisharp_bin = "omnisharp"
   lspconfig.omnisharp.setup{
       cmd = { omnisharp_bin, "--languageserver" , "--hostPID", tostring(pid) },
       capabilities = capabilities
@@ -409,7 +425,6 @@ lua << EOF
     capabilities = capabilities,
     on_attach = function(client, bufnr)
       lsp_status.on_attach(client, bufnr)
-      aerial.on_attach(client, bufnr)
 
       require "lsp_signature".on_attach(lsp_signature_conf)
     end,
@@ -472,7 +487,7 @@ dap.configurations.typescript = {
 EOF
 
 lua << EOF
-require'nvim-treesitter.configs'.setup {
+require 'nvim-treesitter.configs'.setup {
   -- A list of parser names, or "all"
   ensure_installed = { "javascript", "typescript", "c_sharp", "go", "lua", "tsx", "graphql", "css", "html", "vim" },
 
