@@ -44,7 +44,7 @@ set noautochdir         " root as working directory no matter how deep I am
 
 set rtp+=/usr/bin/fzf
 
-" improve clipboard speed
+" improve clipboard speed on wsl
 " let clip = resolve(exepath('clip.exe'))
 " let g:clipboard = {
 "   \ 'name': 'clip',
@@ -95,9 +95,14 @@ if empty(glob("~/.local/share/nvim/site/autoload/plug.vim"))
 endif
 
 call plug#begin('~/.config/nvim/plugged')
+" GUI
+" Plug 'folke/noice.nvim'
+" Plug 'MunifTanjim/nui.nvim'
+" Plug 'rcarriga/nvim-notify'
 " Theme
 Plug 'gruvbox-community/gruvbox'
 Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
+Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 Plug 'itchyny/lightline.vim'
 Plug 'arcticicestudio/nord-vim'
 Plug 'akinsho/nvim-bufferline.lua'
@@ -152,7 +157,7 @@ Plug 'akinsho/toggleterm.nvim', {'tag' : '*'}
 
 call plug#end()
 
-colorscheme gruvbox
+colorscheme tokyonight-moon
 
 lua << EOF
 require("toggleterm").setup()
@@ -259,9 +264,9 @@ nnoremap <leader>gr <cmd>lua require'lspsaga.provider'.rename()<CR>
 nnoremap <silent><leader>cd <cmd>lua require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
 
 " jump diagnostic
-nnoremap <silent>gj <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_prev()<CR>
-nnoremap <silent>gk <cmd>lua require'lspsaga.diagnostic'.lsp_jump_diagnostic_next()<CR>
-nnoremap <silent>go <cmd>lua require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
+nnoremap <silent>gj <cmd>Lspsaga diagnostic_jump_prev<CR>
+nnoremap <silent>gk <cmd>Lspsaga diagnostic_jump_next<CR>
+nnoremap <silent>go <cmd>Lspsaga show_diagnostics<CR>
 
 
 set completeopt=menu,menuone,noselect
@@ -391,6 +396,8 @@ lua << EOF
   local aerial = require("aerial")
   aerial.setup({})
 
+  lspconfig.eslint.setup({})
+
   lspconfig.rust_analyzer.setup{
       capabilities = capabilities,
       on_attach=on_attach,
@@ -411,7 +418,6 @@ lua << EOF
   }
 
 
-  lspconfig.eslint.setup {}
   lspconfig.pylsp.setup {}
 
   local pid = vim.fn.getpid()
@@ -423,6 +429,7 @@ lua << EOF
 
   lspconfig.tsserver.setup{
     capabilities = capabilities,
+    root_dir = require("lspconfig.util").root_pattern(".git"),
     on_attach = function(client, bufnr)
       lsp_status.on_attach(client, bufnr)
 
