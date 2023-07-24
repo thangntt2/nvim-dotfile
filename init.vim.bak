@@ -1,76 +1,46 @@
-syntax enable
-set guifont=Hack\ Nerd\ Font\ Mono:h13
-set background=dark
-set hidden
-set switchbuf=usetab,newtab
-set termguicolors
-set rnu
-set updatetime=300
-set expandtab
-set clipboard+=unnamedplus
-set noswapfile
-set signcolumn=yes
-set smartcase
-set ignorecase
-set noshowmode
-set showtabline=2
-set completeopt=menuone,noselect
-set mouse=a
+lua << EOF
+vim.o.syntax='enable'
+vim.o.hidden=true
+vim.o.switchbuf='usetab,newtab'
+vim.o.termguicolors=true
+vim.o.rnu=true
+vim.o.updatetime=300
+vim.o.expandtab=true
+vim.o.clipboard='unnamedplus'
+vim.o.swapfile=false
+vim.o.signcolumn='yes'
+vim.o.smartcase=true
+vim.o.ignorecase=true
+vim.o.showmode=false
+vim.o.showtabline=2
+vim.o.completeopt="menuone,noselect"
+vim.o.mouse='a'
 
-" set tab numbers
-set guitablabel=%N:%M%t
+-- set tab numbers
+vim.o.guitablabel="%N:%M%t"
 
-" Disable old vi style
-set nocompatible
+-- Disable old vi style
+vim.o.compatible=false
 
-" Don't pass messages to |ins-completion-menu|.
-set shortmess+=c
+-- Don't pass messages to |ins-completion-menu|.
+vim.o.shortmess='c'
 
-" Indentation
-set autoindent
-set expandtab
-set shiftwidth=2
-set softtabstop=2
+-- Indentation
+vim.o.autoindent=true
+vim.o.expandtab=true
+vim.o.shiftwidth=2
+vim.o.softtabstop=2
 
-syntax on
+vim.o.syntax='on'
 
-set number
-filetype indent on
-filetype plugin on
+vim.wo.number=true
+vim.api.nvim_command('filetype indent on')
+vim.api.nvim_command('filetype plugin on')
 
-set showmatch           " highlight matching [{()}]
-set hlsearch            " highlight matches
-set noautochdir         " root as working directory no matter how deep I am
-
-set rtp+=/usr/bin/fzf
-
-" improve clipboard speed on wsl
-" let clip = resolve(exepath('clip.exe'))
-" let g:clipboard = {
-"   \ 'name': 'clip',
-"   \ 'copy': {
-"   \ '+': clip,
-"   \ '*': clip
-"   \   },
-"   \ 'paste': {
-"   \ '+': 'pbpaste.exe --lf',
-"   \ '*': 'pbpaste.exe --lf'
-"   \   }
-"   \ }
-
-nnoremap <Tab> :bnext<CR>
-nnoremap <S-Tab> :bprevious<CR>
-
-" Consistent movement
-nnoremap <A-j> <C-W>j
-nnoremap <A-k> <C-W>k
-nnoremap <A-h> <C-W>h
-nnoremap <A-l> <C-W>l
-
-nnoremap <c-j> <c-e>
-nnoremap <c-k> <c-y>
-nnoremap <c-l> zl
-nnoremap <c-h> zh
+vim.o.showmatch=true
+vim.o.hlsearch=true
+vim.o.autochdir=false
+EOF
 
 "netrw config
 " let g:netrw_banner = 0
@@ -145,14 +115,13 @@ Plug 'nvim-lua/lsp-status.nvim'
 Plug 'kyazdani42/nvim-web-devicons'
 Plug 'folke/trouble.nvim'
 " Plug 'sbdchd/neoformat'
-Plug 'prettier/vim-prettier', {
-  \ 'do': 'yarn install'
-  \ }
+Plug 'mhartington/formatter.nvim'
 " Debug
 Plug 'mfussenegger/nvim-dap'
 Plug 'rcarriga/nvim-dap-ui'
 Plug 'Pocco81/dap-buddy.nvim'
-Plug 'williamboman/mason.nvim'
+Plug 'williamboman/mason.nvim', {'do': ':MasonUpdate'}
+Plug 'williamboman/mason-lspconfig.nvim'
 Plug 'akinsho/toggleterm.nvim', {'tag' : '*'}
 
 call plug#end()
@@ -167,10 +136,6 @@ require("nvim-autopairs").setup {}
 EOF
 
 lua << EOF
-require("mason").setup()
-EOF
-
-lua << EOF
   require("trouble").setup {
     -- your configuration comes here
     -- or leave it empty to use the default settings
@@ -179,22 +144,44 @@ lua << EOF
 EOF
 
 
-" Prettier
-let g:prettier#autoformat = 1
-let g:prettier#autoformat_require_pragma = 0
-let g:prettier#config#arrow_parens = 'avoid'
+lua << EOF
+local prettierd_conf = {
+    -- prettierd
+   function()
+      return {
+        exe = "prettierd",
+        args = {vim.api.nvim_buf_get_name(0)},
+        stdin = true
+      }
+    end
+}
+require('formatter').setup({
+  logging = false,
+  filetype = {
+    javascript = prettierd_conf,
+    typescript = prettierd_conf,
+    javascriptreact = prettierd_conf,
+    typescriptreact = prettierd_conf,
+    json = prettierd_conf,
+    -- Use the special "*" filetype for defining formatter configurations on
+    -- any filetype
+    ["*"] = {
+      -- "formatter.filetypes.any" defines default configurations for any
+      -- filetype
+      require("formatter.filetypes.any").remove_trailing_whitespace
+    }
+  }
+})
+EOF
+
+augroup FormatAutogroup
+  autocmd!
+  autocmd BufWritePost * FormatWrite
+augroup END
 
 " vim-sneak settings
 let g:sneak#label = 1
 let g:sneak#s_next = 1
-
-" " LeaderF settings
-" let g:Lf_WindowPosition = 'popup'
-" let g:Lf_PreviewInPopup = 1
-" let g:Lf_ShowDevIcons = 1
-" nnoremap <silent> <C-space> :Leaderf buffer<CR>
-" nnoremap <C-F> :<C-U><C-R>=printf("Leaderf! rg -e ")<CR>
-" nnoremap <silent> <C-P> :LeaderfFile<CR>
 
 function! LspStatus() abort
   if luaeval('#vim.lsp.buf_get_clients() > 0')
@@ -204,7 +191,7 @@ function! LspStatus() abort
   return ''
 endfunction
 
-command! -bang -nargs=* Rg call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case ".shellescape(<q-args>), 1, {'options': '--delimiter : --nth 4..'}, <bang>0) 
+command! -bang -nargs=* Rg call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case ".shellescape(<q-args>), 1, {'options': '--delimiter : --nth 4..'}, <bang>0)
 
 " Lightline settings
 let g:lightline = {
@@ -223,50 +210,16 @@ let g:lightline = {
   \ }
 
 
-" Twiggy settings
-nnoremap <silent> <leader>g :Twiggy<CR>
 
 " bufferline
 lua << EOF
 require("bufferline").setup{}
 EOF
 
-" LSP 
+" LSP
 lua << EOF
 
 EOF
-
-" Organize import
-
-nnoremap <silent><leader>or <cmd>lua vim.lsp.buf.execute_command({command = "_typescript.organizeImports", arguments = {vim.fn.expand("%:p")}})<CR>
-
-" lsp provider to find the cursor word definition and reference
-nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
-
-" code action
-nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
-vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
-
-" show hover doc
-nnoremap <silent>K <cmd>lua require'lspsaga.hover'.render_hover_doc()<CR>
-
-" show signature help
-nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<CR>
-
-" preview definition
-nnoremap <silent>gd <Cmd>lua vim.lsp.buf.definition()<CR>
-nnoremap <silent>gD <cmd>lua require'lspsaga.provider'.preview_definition()<CR>
-
-" rename
-nnoremap <leader>gr <cmd>lua require'lspsaga.provider'.rename()<CR>
-
-" show
-nnoremap <silent><leader>cd <cmd>lua require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
-
-" jump diagnostic
-nnoremap <silent>gj <cmd>Lspsaga diagnostic_jump_prev<CR>
-nnoremap <silent>gk <cmd>Lspsaga diagnostic_jump_next<CR>
-nnoremap <silent>go <cmd>Lspsaga show_diagnostics<CR>
 
 
 set completeopt=menu,menuone,noselect
@@ -341,7 +294,7 @@ lua << EOF
     }, {
       { name = 'buffer' },
     })
-  }) 
+  })
 
   -- Use buffer source for `/` (if you enabled `native_menu`, this won't work anymore).
   cmp.setup.cmdline('/', {
@@ -396,74 +349,22 @@ lua << EOF
   local aerial = require("aerial")
   aerial.setup({})
 
-  lspconfig.eslint.setup({})
-
-  lspconfig.rust_analyzer.setup{
-      capabilities = capabilities,
-      on_attach=on_attach,
-      settings = {
-          ["rust-analyzer"] = {
-              assist = {
-                  importGranularity = "module",
-                  importPrefix = "by_self",
-              },
-              cargo = {
-                  loadOutDirsFromCheck = true
-              },
-              procMacro = {
-                  enable = true
-              },
-          }
-      }
-  }
-
-
-  lspconfig.pylsp.setup {}
-
   local pid = vim.fn.getpid()
-  local omnisharp_bin = "omnisharp"
-  lspconfig.omnisharp.setup{
-      cmd = { omnisharp_bin, "--languageserver" , "--hostPID", tostring(pid) },
-      capabilities = capabilities
-  }
-
-  lspconfig.tsserver.setup{
-    capabilities = capabilities,
-    root_dir = require("lspconfig.util").root_pattern(".git"),
-    on_attach = function(client, bufnr)
-      lsp_status.on_attach(client, bufnr)
-
-      require "lsp_signature".on_attach(lsp_signature_conf)
-    end,
-  }
 
   local saga = require 'lspsaga'
   saga.init_lsp_saga()
+
+  require("mason").setup()
+    require('mason-lspconfig').setup_handlers({
+    function(server)
+      lspconfig[server].setup({})
+    end,
+  })
 EOF
 
 lua << EOF
 require('gitsigns').setup()
 EOF
-
-" FZF settings
-" command! FZFS call fzf#run(fzf#wrap({'source': 'git ls-files'}))
-" nnoremap <silent> <C-space> :Leaderf buffer<CR>
-" nnoremap <C-F> :<C-U><C-R>=printf("Leaderf! rg -e ")<CR>
-nnoremap <silent> <C-P> :call fzf#run(fzf#wrap({'source': 'git ls-files'}))<CR>
-nnoremap <silent> <C-space> :Buffers <CR>
-nnoremap <silent> <C-W> <cmd>lua vim.lsp.buf.workspace_symbol() <CR>
-nnoremap <silent> <C-F> :Rg <CR>
-let g:fzf_preview_window = ['down:50%:hidden', 'ctrl-/']
-
-" Aerial settings
-nnoremap <silent> <C-]> <cmd>call aerial#fzf()<cr>
-
-" rest.nvim
-nnoremap <silent> <C-q> <Plug>RestNvim<CR>
-
-" toggleterm
-nnoremap <silent><c-t> <Cmd>exe v:count1 . "ToggleTerm"<CR>
-inoremap <silent><c-t> <Esc><Cmd>exe v:count1 . "ToggleTerm"<CR>
 
 lua << EOF
 local dap = require('dap')
@@ -519,3 +420,73 @@ require 'nvim-treesitter.configs'.setup {
   },
 }
 EOF
+
+
+" key maps
+nnoremap <Tab> :bnext<CR>
+nnoremap <S-Tab> :bprevious<CR>
+
+" Consistent movement
+nnoremap <A-j> <C-W>j
+nnoremap <A-k> <C-W>k
+nnoremap <A-h> <C-W>h
+nnoremap <A-l> <C-W>l
+
+nnoremap <c-j> <c-e>
+nnoremap <c-k> <c-y>
+nnoremap <c-l> zl
+nnoremap <c-h> zh
+
+nnoremap <silent> <leader>p :Format<CR>
+nnoremap <silent> <leader>P :FormatWrite<CR>
+
+" Twiggy settings
+nnoremap <silent> <leader>g :Twiggy<CR>
+"
+" Organize import
+nnoremap <silent><leader>or <cmd>lua vim.lsp.buf.execute_command({command = "_typescript.organizeImports", arguments = {vim.fn.expand("%:p")}})<CR>
+
+" lsp provider to find the cursor word definition and reference
+nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
+
+" code action
+nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
+vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
+
+" show hover doc
+nnoremap <silent>K <cmd>lua require'lspsaga.hover'.render_hover_doc()<CR>
+
+" show signature help
+nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<CR>
+
+" preview definition
+nnoremap <silent>gd <Cmd>lua vim.lsp.buf.definition()<CR>
+nnoremap <silent>gD <cmd>lua require'lspsaga.provider'.preview_definition()<CR>
+
+" rename
+nnoremap <leader>gr <cmd>lua require'lspsaga.provider'.rename()<CR>
+
+" show
+nnoremap <silent><leader>cd <cmd>lua require'lspsaga.diagnostic'.show_line_diagnostics()<CR>
+
+" jump diagnostic
+nnoremap <silent>gj <cmd>Lspsaga diagnostic_jump_prev<CR>
+nnoremap <silent>gk <cmd>Lspsaga diagnostic_jump_next<CR>
+nnoremap <silent>go <cmd>Lspsaga show_diagnostics<CR>
+
+" FZF settings
+nnoremap <silent> <C-P> :call fzf#run(fzf#wrap({'source': 'git ls-files'}))<CR>
+nnoremap <silent> <C-space> :Buffers <CR>
+nnoremap <silent> <C-W> <cmd>lua vim.lsp.buf.workspace_symbol() <CR>
+nnoremap <silent> <C-F> :Rg <CR>
+let g:fzf_preview_window = ['down:50%:hidden', 'ctrl-/']
+
+" Aerial settings
+nnoremap <silent> <C-]> <cmd>call aerial#fzf()<cr>
+
+" rest.nvim
+nnoremap <silent> <C-q> <Plug>RestNvim<CR>
+
+" toggleterm
+nnoremap <silent><c-t> <Cmd>exe v:count1 . "ToggleTerm"<CR>
+inoremap <silent><c-t> <Esc><Cmd>exe v:count1 . "ToggleTerm"<CR>
