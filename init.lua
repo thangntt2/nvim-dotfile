@@ -144,14 +144,6 @@ require('lazy').setup({
     },
   },
 
-  {
-    -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
-    priority = 1000,
-    config = function()
-      vim.cmd.colorscheme 'onedark'
-    end,
-  },
 
   {
     -- Set lualine as statusline
@@ -290,12 +282,18 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 
 -- [[ Configure Telescope ]]
 -- See `:help telescope` and `:help telescope.setup()`
+local telescope_actions = require('telescope.actions')
 require('telescope').setup {
   defaults = {
     mappings = {
       i = {
         ['<C-u>'] = false,
         ['<C-d>'] = false,
+        ['<C-j>'] = telescope_actions.move_selection_next,
+        ['<C-k>'] = telescope_actions.move_selection_previous,
+        ['<Down>'] = telescope_actions.toggle_selection + telescope_actions.move_selection_next,
+
+        ['<Up>'] = telescope_actions.move_selection_previous + telescope_actions.toggle_selection
       },
     },
   },
@@ -515,7 +513,7 @@ cmp.setup {
   },
 }
 
-vim.g.colors_name = 'tokyonight-moon'
+vim.cmd [[colorscheme tokyonight-moon]]
 
 -- key maps
 --
