@@ -80,6 +80,7 @@ require('lazy').setup({
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
+  'dstein64/vim-startuptime',
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
@@ -103,6 +104,22 @@ require('lazy').setup({
       -- Additional lua configuration, makes nvim stuff amazing!
       'folke/neodev.nvim',
     },
+  },
+  {
+    'mfussenegger/nvim-lint',
+    config = function()
+      require('lint').linters_by_ft = {
+        javascript = {'eslint_d'},
+        typescript = {'eslint_d'},
+        javascriptreact = {'eslint_d'},
+        typescriptreact = {'eslint_d'},
+      }
+      vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+        callback = function()
+          require("lint").try_lint()
+        end,
+      })
+    end
   },
   { 'akinsho/toggleterm.nvim', version = "*", config = true },
   {
@@ -139,7 +156,7 @@ require('lazy').setup({
         vim.keymap.set('n', '<leader>gp', require('gitsigns').prev_hunk,
           { buffer = bufnr, desc = '[G]o to [P]revious Hunk' })
         vim.keymap.set('n', '<leader>gn', require('gitsigns').next_hunk, { buffer = bufnr, desc = '[G]o to [N]ext Hunk' })
-        vim.keymap.set('n', '<leader>ph', require('gitsigns').preview_hunk, { buffer = bufnr, desc = '[P]review [H]unk' })
+        -- vim.keymap.set('n', '<leader>ph', require('gitsigns').preview_hunk, { buffer = bufnr, desc = '[P]review [H]unk' })
       end,
     },
   },
@@ -210,29 +227,16 @@ require('lazy').setup({
   'justinmk/vim-sneak',
   {
     'mhartington/formatter.nvim',
-    opts = function()
-      local prettierd_conf = {
-        -- prettierd
-        function()
-          return {
-            exe = "prettierd",
-            args = { vim.api.nvim_buf_get_name(0) },
-            stdin = true
-          }
-        end
-      }
-      return {
+    config = function()
+      require('formatter').setup({
         logging = false,
         filetype = {
-          javascript = prettierd_conf,
-          typescript = prettierd_conf,
-          javascriptreact = prettierd_conf,
-          typescriptreact = prettierd_conf,
-          json = prettierd_conf,
+          typescript = require('formatter.filetypes.javascript').prettierd,
+          javascript = require('formatter.filetypes.javascript').prettierd,
+          javascriptreact = require('formatter.filetypes.javascript').prettierd,
+          typescriptreact = require('formatter.filetypes.javascript').prettierd
         }
-      }
-    end,
-    config = function()
+      })
       vim.cmd [[autocmd BufWritePost * FormatWrite]]
     end
   },
@@ -330,17 +334,17 @@ require('lazy').setup({
         -- This setting only take effect in insert mode, it does not affect signature help in normal
         -- mode, 10 by default
 
-        floating_window = true,  -- show hint in a floating window, set to false for virtual text only mode
-        fix_pos = false,         -- set to true, the floating window will not auto-close until finish all parameters
-        hint_enable = true,      -- virtual hint enable
-        hint_prefix = "🐼 ",   -- Panda for parameter
+        floating_window = true, -- show hint in a floating window, set to false for virtual text only mode
+        fix_pos = false, -- set to true, the floating window will not auto-close until finish all parameters
+        hint_enable = true, -- virtual hint enable
+        hint_prefix = "🐼 ", -- Panda for parameter
         hint_scheme = "String",
         hi_parameter = "Search", -- how your parameter will be highlight
-        max_height = 12,         -- max height of signature floating_window, if content is more than max_height, you can scroll down
+        max_height = 12, -- max height of signature floating_window, if content is more than max_height, you can scroll down
         -- to view the hiding contents
-        max_width = 120,         -- max_width of signature floating_window, line will be wrapped if exceed max_width
+        max_width = 120, -- max_width of signature floating_window, line will be wrapped if exceed max_width
         handler_opts = {
-          border = "double",     -- double, single, shadow, none
+          border = "double", -- double, single, shadow, none
         },
         extra_trigger_chars = {}
       }
@@ -567,6 +571,22 @@ require('lazy').setup({
         "Widgets"
       },
     }
+  },
+
+  {
+    "nvim-neo-tree/neo-tree.nvim",
+    branch = "v3.x",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+      "MunifTanjim/nui.nvim",
+    }
+  },
+  {
+    'NeogitOrg/neogit',
+    config = function ()
+      require('neogit').setup({})
+    end
   }
 
 
@@ -719,7 +739,8 @@ local on_attach = function(_, bufnr)
   end
 
   nmap('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
-  nmap('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+  nmap('<leader>ca', '<cmd>Lspsaga code_action<CR>', '[C]ode [A]ction')
+  nmap('<leader>cd', '<cmd>Lspsaga show_line_diagnostics<CR>', '[C]Line [D]iagnostics')
 
   nmap('gd', '<cmd>Lspsaga goto_definition<CR>', '[G]oto [D]efinition')
   nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
@@ -756,7 +777,7 @@ local servers = {
   -- gopls = {},
   -- pyright = {},
   -- rust_analyzer = {},
-  -- tsserver = {},
+  tsserver = {},
 
   lua_ls = {
     Lua = {
@@ -894,7 +915,7 @@ nnoremap <silent> <leader>g :Twiggy<CR>
 nnoremap <silent><leader>or <cmd>lua vim.lsp.buf.execute_command({command = "_typescript.organizeImports", arguments = {vim.fn.expand("%:p")}})<CR>
 
 " lsp provider to find the cursor word definition and reference
-nnoremap <silent> gh <cmd>lua require'lspsaga.provider'.lsp_finder()<CR>
+nnoremap <silent> gh <cmd>:Lspsaga finder<CR>
 
 " code action
 nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
