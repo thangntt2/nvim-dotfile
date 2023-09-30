@@ -1,4 +1,9 @@
 local vim = vim
+--
+-- disable netrw at the very start of your init.lua
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+vim.g["codegpt_openai_api_key"] = "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"
 
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
@@ -53,6 +58,11 @@ vim.o.breakindent = true
 -- Save undo history
 vim.o.undofile = true
 
+-- Spell checking
+vim.opt.spelllang = 'en_us'
+vim.opt.spell = true
+vim.opt.spelloptions = 'camel'
+
 -- Install package manager
 --    https://github.com/folke/lazy.nvim
 --    `:help lazy.nvim.txt` for more info
@@ -78,7 +88,12 @@ require('lazy').setup({
   -- NOTE: First, some plugins that don't require any configuration
 
   -- Git related plugins
-  'tpope/vim-fugitive',
+  {
+    'tpope/vim-fugitive',
+    dependencies = {
+      'tommcdo/vim-fubitive'
+    }
+  },
   'tpope/vim-rhubarb',
   'dstein64/vim-startuptime',
 
@@ -109,10 +124,10 @@ require('lazy').setup({
     'mfussenegger/nvim-lint',
     config = function()
       require('lint').linters_by_ft = {
-        javascript = {'eslint_d'},
-        typescript = {'eslint_d'},
-        javascriptreact = {'eslint_d'},
-        typescriptreact = {'eslint_d'},
+        javascript = { 'eslint_d' },
+        typescript = { 'eslint_d' },
+        javascriptreact = { 'eslint_d' },
+        typescriptreact = { 'eslint_d' },
       }
       vim.api.nvim_create_autocmd({ "BufWritePost" }, {
         callback = function()
@@ -371,8 +386,15 @@ require('lazy').setup({
         "rcarriga/nvim-dap-ui",
         -- stylua: ignore
         keys = {
-          { "<leader>du", function() require("dapui").toggle({}) end, desc = "Dap UI" },
-          { "<leader>de", function() require("dapui").eval() end,     desc = "Eval",  mode = { "n", "v" } },
+          { "<leader>du", function() require("dapui").toggle({}) end, desc = "Dap UI", id = 'dapui_toggle' },
+          {
+            "<leader>de",
+            function() require("dapui").eval() end,
+            desc = "Eval",
+            mode = { "n", "v" },
+            id =
+            'dapui_eval'
+          },
         },
         opts = {},
         config = function(_, opts)
@@ -434,13 +456,14 @@ require('lazy').setup({
         'mxsdev/nvim-dap-vscode-js',
         config = function()
           require("dap-vscode-js").setup({
-            -- node_path = "node", -- Path of node executable. Defaults to $NODE_PATH, and then "node"
+            node_path = "node",
             debugger_path = "/Users/Thang/.config/nvim/vscode-js-debug",                                 -- Path to vscode-js-debug installation.
-            -- debugger_cmd = { "js-debug-adapter" }, -- Command to use to launch the debug server. Takes precedence over `node_path` and `debugger_path`.
+            debugger_cmd = { "js-debug-adapter" },                                                       -- Command to use to launch the debug server. Takes precedence over `node_path` and `debugger_path`.
             adapters = { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' }, -- which adapters to register in nvim-dap
-            -- log_file_path = "(stdpath cache)/dap_vscode_js.log" -- Path for file logging
-            -- log_file_level = false -- Logging level for output to file. Set to false to disable file logging.
-            -- log_console_level = vim.log.levels.ERROR -- Logging level for output to console. Set to false to disable console output.
+            -- log_file_path = "(stdpath cache)/dap_vscode_js.log",                                         -- Path for file logging
+            -- log_file_level = 3,                                                                          -- Logging level for output to file. Set to false to disable file logging.
+            -- log_console_level = vim.log.levels
+            -- .ERROR                                                                                       -- Logging level for output to console. Set to false to disable console output.
           })
 
           for _, language in ipairs({ "typescript", "javascript" }) do
@@ -486,86 +509,100 @@ require('lazy').setup({
     keys = {
       {
         "<leader>dB",
+        id = 'debugger_breakpointcondition',
         function() require("dap").set_breakpoint(vim.fn.input('Breakpoint condition: ')) end,
         desc =
         "Breakpoint Condition"
       },
       {
         "<leader>db",
+        id = 'debugger_breakpoint_toggle',
         function() require("dap").toggle_breakpoint() end,
         desc =
         "Toggle Breakpoint"
       },
       {
         "<leader>dc",
+        id = 'debugger_continue',
         function() require("dap").continue() end,
         desc =
         "Continue"
       },
       {
         "<leader>dC",
+        id = 'debugger_run_to_cursor',
         function() require("dap").run_to_cursor() end,
         desc =
         "Run to Cursor"
       },
       {
         "<leader>dg",
+        id = 'debugger_goto_line',
         function() require("dap").goto_() end,
         desc =
         "Go to line (no execute)"
       },
       {
         "<leader>di",
+        id = 'debugger_step_into',
         function() require("dap").step_into() end,
         desc =
         "Step Into"
       },
-      { "<leader>dj", function() require("dap").down() end, desc = "Down" },
-      { "<leader>dk", function() require("dap").up() end,   desc = "Up" },
+      { "<leader>dj", function() require("dap").down() end, desc = "Down", id = 'debugger_down' },
+      { "<leader>dk", function() require("dap").up() end,   desc = "Up",   id = 'debugger_up' },
       {
         "<leader>dl",
+        id = 'debugger_run_last',
         function() require("dap").run_last() end,
         desc =
         "Run Last"
       },
       {
         "<leader>do",
+        id = 'debugger_step_out',
         function() require("dap").step_out() end,
         desc =
         "Step Out"
       },
       {
         "<leader>dO",
+        id = 'debugger_step_over',
         function() require("dap").step_over() end,
         desc =
         "Step Over"
       },
       {
         "<leader>dp",
+        id = 'debugger_pause',
         function() require("dap").pause() end,
         desc =
         "Pause"
       },
       {
         "<leader>dr",
+        id = 'debugger_toggle_repl',
         function() require("dap").repl.toggle() end,
         desc =
         "Toggle REPL"
       },
       {
         "<leader>ds",
+        id = 'debugger_session',
         function() require("dap").session() end,
         desc =
         "Session"
       },
       {
         "<leader>dt",
+        id = 'debugger_termiate',
         function() require("dap").terminate() end,
         desc =
         "Terminate"
       },
       {
         "<leader>dw",
+        id = 'debugger_dapui_widgets',
         function() require("dap.ui.widgets").hover() end,
         desc =
         "Widgets"
@@ -574,35 +611,125 @@ require('lazy').setup({
   },
 
   {
-    "nvim-neo-tree/neo-tree.nvim",
-    branch = "v3.x",
+    "nvim-tree/nvim-tree.lua",
     dependencies = {
-      "nvim-lua/plenary.nvim",
       "nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
-      "MunifTanjim/nui.nvim",
-    }
+    },
+    config = function()
+      local gwidth = vim.api.nvim_list_uis()[1].width
+      local gheight = vim.api.nvim_list_uis()[1].height
+      local width = 80
+      local height = 40
+      require("nvim-tree").setup({
+        actions = {
+          open_file = {
+            quit_on_open = true
+          },
+        },
+        update_focused_file = {
+          enable = true,
+          update_root = false,
+        },
+        disable_netrw = true,
+        hijack_netrw = true,
+        respect_buf_cwd = true,
+        sync_root_with_cwd = false,
+        view = {
+          relativenumber = true,
+          float = {
+            enable = true,
+            open_win_config = {
+              relative = "editor",
+              width = width,
+              height = height,
+              row = (gheight - height) * 0.4,
+              col = (gwidth - width) * 0.5,
+            }
+          },
+        },
+      })
+    end,
+    on_attach = function(bufnr)
+      local api = require "nvim-tree.api"
+
+      local function opts(desc)
+        return { desc = "nvim-tree: " .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+      end
+
+      -- default mappings
+      -- api.config.mappings.default_on_attach(bufnr)
+
+      -- custom mappings
+      vim.keymap.set('n', '?', api.tree.toggle_help, opts('Help'))
+    end
   },
   {
-    'NeogitOrg/neogit',
-    config = function ()
-      require('neogit').setup({})
+   "rest-nvim/rest.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config = function()
+      require("rest-nvim").setup({
+        -- Open request results in a horizontal split
+        result_split_horizontal = false,
+        -- Keep the http file buffer above|left when split horizontal|vertical
+        result_split_in_place = false,
+        -- Skip SSL verification, useful for unknown certificates
+        skip_ssl_verification = false,
+        -- Encode URL before making request
+        encode_url = true,
+        -- Highlight request on run
+        highlight = {
+          enabled = true,
+          timeout = 150,
+        },
+        result = {
+          -- toggle showing URL, HTTP info, headers at top the of result window
+          show_url = true,
+          -- show the generated curl command in case you want to launch
+          -- the same request via the terminal (can be verbose)
+          show_curl_command = false,
+          show_http_info = true,
+          show_headers = true,
+          -- executables or functions for formatting response body [optional]
+          -- set them to false if you want to disable them
+          formatters = {
+            json = "jq",
+            html = function(body)
+              return vim.fn.system({"tidy", "-i", "-q", "-"}, body)
+            end
+          },
+        },
+        -- Jump to request line on run
+        jump_to_request = false,
+        env_file = '.env',
+        custom_dynamic_variables = {},
+        yank_dry_run = true,
+      })
     end
+  },
+  {
+    "jackMort/ChatGPT.nvim",
+      event = "VeryLazy",
+      config = function()
+        require("chatgpt").setup({
+          api_key_cmd = "security find-internet-password -s openai -a neovim -w"
+        })
+      end,
+      dependencies = {
+        "MunifTanjim/nui.nvim",
+        "nvim-lua/plenary.nvim",
+        "nvim-telescope/telescope.nvim"
+      }
+  },
+  {
+      "dpayne/CodeGPT.nvim",
+      dependencies = {
+        'nvim-lua/plenary.nvim',
+        'MunifTanjim/nui.nvim',
+      },
+      config = function()
+          require("codegpt.config")
+      end
   }
-
-
-  -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
-  --       These are some example plugins that I've included in the kickstart repository.
-  --       Uncomment any of the lines below to enable them.
-  -- require 'kickstart.plugins.autoformat',
-  -- require 'kickstart.plugins.debug',
-
-  -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
-  --    You can use this folder to prevent any conflicts with this init.lua if you're interested in keeping
-  --    up-to-date with whatever is in the kickstart repo.
-  --    Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  --
-  --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
-  -- { import = 'custom.plugins' },
 }, {})
 
 -- [[ Setting options ]]
@@ -653,7 +780,11 @@ pcall(require('telescope').load_extension, 'fzf')
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'vimdoc', 'vim' },
+  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'vimdoc', 'vim', 'http' },
+  sync_install = true,
+  modules = {},
+  ignore_install = { 'json' },
+  disable = {'json'},
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
@@ -742,8 +873,11 @@ local on_attach = function(_, bufnr)
   nmap('<leader>ca', '<cmd>Lspsaga code_action<CR>', '[C]ode [A]ction')
   nmap('<leader>cd', '<cmd>Lspsaga show_line_diagnostics<CR>', '[C]Line [D]iagnostics')
 
-  nmap('gd', '<cmd>Lspsaga goto_definition<CR>', '[G]oto [D]efinition')
+  nmap('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
   nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
+  nmap('gh', function()
+    require('telescope.builtin').lsp_references({ layout_strategy = 'vertical' })
+  end, '[G]oto [H]Incoming calls')
   nmap('gI', vim.lsp.buf.implementation, '[G]oto [I]mplementation')
   nmap('<leader>D', vim.lsp.buf.type_definition, 'Type [D]efinition')
   nmap('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
@@ -754,7 +888,7 @@ local on_attach = function(_, bufnr)
   nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
 
   -- Lesser used LSP functionality
-  nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+  -- nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
   nmap('<leader>wa', vim.lsp.buf.add_workspace_folder, '[W]orkspace [A]dd Folder')
   nmap('<leader>wr', vim.lsp.buf.remove_workspace_folder, '[W]orkspace [R]emove Folder')
   nmap('<leader>wl', function()
@@ -824,6 +958,7 @@ cmp.setup {
       luasnip.lsp_expand(args.body)
     end,
   },
+  enabled = true,
   mapping = cmp.mapping.preset.insert {
     ['<C-n>'] = cmp.mapping.select_next_item(),
     ['<C-p>'] = cmp.mapping.select_prev_item(),
@@ -915,14 +1050,14 @@ nnoremap <silent> <leader>g :Twiggy<CR>
 nnoremap <silent><leader>or <cmd>lua vim.lsp.buf.execute_command({command = "_typescript.organizeImports", arguments = {vim.fn.expand("%:p")}})<CR>
 
 " lsp provider to find the cursor word definition and reference
-nnoremap <silent> gh <cmd>:Lspsaga finder<CR>
+" nnoremap <silent> gh <cmd>:Lspsaga finder<CR>
 
 " code action
-nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
+" nnoremap <silent><leader>ca <cmd>lua require('lspsaga.codeaction').code_action()<CR>
 vnoremap <silent><leader>ca :<C-U>Lspsaga range_code_action<CR>
 
 " show hover doc
-nnoremap <silent>K <cmd>lua require'lspsaga.hover'.render_hover_doc()<CR>
+" nnoremap <silent>K <cmd>lua require'lspsaga.hover'.render_hover_doc()<CR>
 
 " show signature help
 nnoremap <silent> gs <cmd>lua require('lspsaga.signaturehelp').signature_help()<CR>
@@ -951,6 +1086,8 @@ nnoremap <silent> <C-q> <Plug>RestNvim<CR>
 " toggleterm
 nnoremap <silent><c-t> <Cmd>exe v:count1 . "ToggleTerm"<CR>
 inoremap <silent><c-t> <Esc><Cmd>exe v:count1 . "ToggleTerm"<CR>
+
+nnoremap <silent>- <Cmd>NvimTreeFindFile<CR>
 ]])
 
 -- telescope keymap
@@ -958,7 +1095,7 @@ local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<C-P>', function()
   builtin.git_files({ layout_strategy = 'vertical' })
 end, { noremap = true, silent = true })
-vim.keymap.set('n', '<C-space>', function() builtin.buffers({ layout_strategy = 'vertical', sort_lastused = true }) end,
+vim.keymap.set('n', '<C-space>', function() builtin.buffers({ layout_strategy = 'vertical', ignore_current_buffer = true, sort_mru = true }) end,
   { noremap = true, silent = true })
 vim.keymap.set('n', '<C-F>', function() builtin.live_grep({ layout_strategy = 'vertical' }) end,
   { noremap = true, silent = true })
