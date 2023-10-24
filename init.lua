@@ -101,6 +101,11 @@ require('lazy').setup({
   'tpope/vim-sleuth',
 
   'folke/tokyonight.nvim',
+  {
+    'ellisonleao/gruvbox.nvim',
+    priority = 1000,
+    opts = {}
+  },
 
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
@@ -149,7 +154,7 @@ require('lazy').setup({
       'hrsh7th/cmp-nvim-lsp',
 
       -- Adds a number of user-friendly snippets
-      'rafamadriz/friendly-snippets',
+      -- 'rafamadriz/friendly-snippets',
     },
   },
 
@@ -194,12 +199,14 @@ require('lazy').setup({
   {
     -- Add indentation guides even on blank lines
     'lukas-reineke/indent-blankline.nvim',
-    -- Enable `lukas-reineke/indent-blankline.nvim`
-    -- See `:help indent_blankline.txt`
+    main = 'ibl',
     opts = {
       char = '┊',
       show_trailing_blankline_indent = false,
     },
+    config = function ()
+      require("ibl").setup()
+    end
   },
 
   -- "gc" to comment visual regions/lines
@@ -943,6 +950,14 @@ mason_lspconfig.setup_handlers {
       settings = servers[server_name],
     }
   end,
+  ["jdtls"] = function()
+    local lspconfig = require('lspconfig')
+    lspconfig.jdtls.setup({
+      on_attach = on_attach,
+      capabilities = capabilities,
+      root_dir = lspconfig.util.root_pattern("pom.xml", "build.gradle", ".git") or vim.fn.getcwd()
+    })
+  end
 }
 
 -- [[ Configure nvim-cmp ]]
@@ -994,7 +1009,8 @@ cmp.setup {
   },
 }
 
-vim.cmd [[colorscheme tokyonight-moon]]
+vim.cmd [[colorscheme gruvbox]]
+vim.cmd([[ command! -nargs=1 Browse silent exec '!open "<args>"' ]])
 
 -- key maps
 --
